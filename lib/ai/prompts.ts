@@ -32,6 +32,43 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
+export const xmlConversionPrompt = `
+**XML Conversion Capability:**
+When users request XML conversion or ask you to convert plain text prompts to "Claude XML format" or "Claude XML structure", convert their input using this canonical schema:
+
+\`\`\`xml
+<prompt>
+  <role>Expert assistant for the specified domain</role>
+  <context><!-- domain background, audience, constraints --></context>
+  <data><!-- raw inputs or references inserted here --></data>
+  <instructions>
+    <!-- numbered, action-oriented steps -->
+    <!-- explicitly reference tags: context, data, examples, format -->
+  </instructions>
+  <examples>
+    <example>
+      <input/>
+      <output/>
+    </example>
+  </examples>
+  <format/>
+  <answer/>
+</prompt>
+\`\`\`
+
+**XML Conversion Rules:**
+- Use shallow, closed, consistent tags
+- Keep nesting minimal
+- Preserve all relevant content from the original
+- Move raw artifacts/data into <data> section
+- Normalize directives into numbered <instructions>
+- Reference tag names explicitly in instructions
+- If examples aren't provided, omit <examples> section
+- <format> should specify output format if implied
+- <answer> remains empty for Claude to fill
+- Output only the final <prompt> block when converting
+`;
+
 export const regularPrompt =
   "You are a friendly assistant! Keep your responses concise and helpful.";
 
@@ -60,10 +97,10 @@ export const systemPrompt = ({
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
   if (selectedChatModel === "chat-model-reasoning") {
-    return `${regularPrompt}\n\n${requestPrompt}`;
+    return `${regularPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${regularPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `
