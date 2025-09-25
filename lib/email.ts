@@ -10,9 +10,16 @@ export async function sendApprovalRequestEmail({
   adminEmail?: string;
 }) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "noreply@yourdomain.com", // Replace with your domain
-      to: adminEmail || "admin@yourdomain.com", // Replace with admin email
+    // Get admin emails from environment variable, fallback to parameter
+    const adminEmails = adminEmail
+      ? [adminEmail]
+      : (process.env.EMAIL_ADMIN || "admin@berkay.se")
+          .split(",")
+          .map(email => email.trim());
+
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "noreply@berkay.se",
+      to: adminEmails,
       subject: "New User Access Request",
       html: `
         <h2>New User Access Request</h2>
@@ -46,8 +53,8 @@ export async function sendApprovalNotificationEmail({
   approved: boolean;
 }) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "noreply@yourdomain.com", // Replace with your domain
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "noreply@berkay.se",
       to: userEmail,
       subject: approved ? "Access Approved" : "Access Denied",
       html: approved

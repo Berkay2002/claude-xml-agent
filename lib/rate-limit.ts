@@ -1,25 +1,28 @@
 // Simple in-memory rate limiting (for development/fallback)
 // Note: This won't work across multiple server instances in production
-interface RateLimitEntry {
+type RateLimitEntry = {
   count: number;
   resetTime: number;
-}
+};
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (now > entry.resetTime) {
+        rateLimitStore.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 function createSimpleRateLimit(maxRequests: number, windowMs: number) {
   return {
-    limit: async (identifier: string) => {
+    limit: (identifier: string) => {
       const key = `${identifier}`;
       const now = Date.now();
       const entry = rateLimitStore.get(key);
@@ -31,32 +34,32 @@ function createSimpleRateLimit(maxRequests: number, windowMs: number) {
           resetTime: now + windowMs,
         };
         rateLimitStore.set(key, newEntry);
-        return {
+        return Promise.resolve({
           success: true,
           limit: maxRequests,
           remaining: maxRequests - 1,
           reset: newEntry.resetTime,
-        };
+        });
       }
 
       if (entry.count >= maxRequests) {
         // Rate limit exceeded
-        return {
+        return Promise.resolve({
           success: false,
           limit: maxRequests,
           remaining: 0,
           reset: entry.resetTime,
-        };
+        });
       }
 
       // Increment counter
       entry.count++;
-      return {
+      return Promise.resolve({
         success: true,
         limit: maxRequests,
         remaining: maxRequests - entry.count,
         reset: entry.resetTime,
-      };
+      });
     },
   };
 }
@@ -64,7 +67,10 @@ function createSimpleRateLimit(maxRequests: number, windowMs: number) {
 // Rate limiting configurations
 export const guestRateLimit = createSimpleRateLimit(10, 60 * 60 * 1000); // 10 requests per hour
 export const unapprovedUserRateLimit = createSimpleRateLimit(5, 60 * 60 * 1000); // 5 requests per hour
-export const approvedUserRateLimit = createSimpleRateLimit(1000, 60 * 60 * 1000); // 1000 requests per hour
+export const approvedUserRateLimit = createSimpleRateLimit(
+  1000,
+  60 * 60 * 1000
+); // 1000 requests per hour
 
 export type UserType = "guest" | "unapproved" | "approved";
 
