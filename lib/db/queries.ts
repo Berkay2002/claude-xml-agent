@@ -585,10 +585,7 @@ export async function getAllUsers(): Promise<User[]> {
       .where(eq(user.role, "user"))
       .orderBy(desc(user.id));
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get all users"
-    );
+    throw new ChatSDKError("bad_request:database", "Failed to get all users");
   }
 }
 
@@ -610,28 +607,15 @@ export async function approveUser({
       .where(eq(user.id, userId))
       .returning();
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to approve user"
-    );
+    throw new ChatSDKError("bad_request:database", "Failed to approve user");
   }
 }
 
-export async function rejectUser({
-  userId,
-}: {
-  userId: string;
-}) {
+export async function rejectUser({ userId }: { userId: string }) {
   try {
-    return await db
-      .delete(user)
-      .where(eq(user.id, userId))
-      .returning();
+    return await db.delete(user).where(eq(user.id, userId)).returning();
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to reject user"
-    );
+    throw new ChatSDKError("bad_request:database", "Failed to reject user");
   }
 }
 
@@ -649,9 +633,6 @@ export async function setUserRole({
       .where(eq(user.id, userId))
       .returning();
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to set user role"
-    );
+    throw new ChatSDKError("bad_request:database", "Failed to set user role");
   }
 }

@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function applyRateLimit(request: NextRequest): Promise<NextResponse | null> {
+export async function applyRateLimit(
+  request: NextRequest
+): Promise<NextResponse | null> {
   try {
     // Get session to determine user type
     const session = await auth();
@@ -11,11 +13,7 @@ export async function applyRateLimit(request: NextRequest): Promise<NextResponse
     let userType: "guest" | "unapproved" | "approved";
     let isApproved = false;
 
-    if (!session?.user) {
-      // Guest user - use IP address as identifier
-      identifier = request.ip || request.headers.get("x-forwarded-for") || "unknown";
-      userType = "guest";
-    } else {
+    if (session?.user) {
       // Authenticated user - use user ID as identifier
       identifier = session.user.id;
 
@@ -26,10 +24,19 @@ export async function applyRateLimit(request: NextRequest): Promise<NextResponse
         isApproved = session.user.isApproved || false;
         userType = isApproved ? "approved" : "unapproved";
       }
+    } else {
+      // Guest user - use IP address as identifier
+      identifier =
+        request.ip || request.headers.get("x-forwarded-for") || "unknown";
+      userType = "guest";
     }
 
     // Check rate limit
-    const rateLimitResult = await checkRateLimit(identifier, userType, isApproved);
+    const rateLimitResult = await checkRateLimit(
+      identifier,
+      userType,
+      isApproved
+    );
 
     if (!rateLimitResult.success) {
       return new NextResponse(

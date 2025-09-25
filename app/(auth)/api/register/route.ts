@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createUser, getUser } from "@/lib/db/queries";
 import { sendApprovalRequestEmail } from "@/lib/email";
 
@@ -31,13 +31,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      message: "Registration successful. Your account is pending approval from an administrator.",
+      message:
+        "Registration successful. Your account is pending approval from an administrator.",
     });
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json(
-      { error: "Registration failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

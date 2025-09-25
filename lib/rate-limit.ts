@@ -43,7 +43,11 @@ export function getRateLimitForUser(userType: UserType, isApproved?: boolean) {
   return unapprovedUserRateLimit;
 }
 
-export async function checkRateLimit(identifier: string, userType: UserType, isApproved?: boolean) {
+export async function checkRateLimit(
+  identifier: string,
+  userType: UserType,
+  isApproved?: boolean
+) {
   const rateLimit = getRateLimitForUser(userType, isApproved);
   const result = await rateLimit.limit(identifier);
 

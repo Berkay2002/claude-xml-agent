@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import {
+  approveUser,
   getAllUsers,
   getPendingUsers,
-  approveUser,
   rejectUser,
-  setUserRole
+  setUserRole,
 } from "@/lib/db/queries";
 import { sendApprovalNotificationEmail } from "@/lib/email";
 
@@ -24,13 +24,15 @@ export async function GET(request: NextRequest) {
     if (type === "pending") {
       const users = await getPendingUsers();
       return NextResponse.json({ users });
-    } else {
-      const users = await getAllUsers();
-      return NextResponse.json({ users });
     }
+    const users = await getAllUsers();
+    return NextResponse.json({ users });
   } catch (error) {
     console.error("Error fetching users:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch users" },
+      { status: 500 }
+    );
   }
 }
 
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
     const { action, userId, role } = await request.json();
 
     switch (action) {
-      case "approve":
+      case "approve": {
         const approvedUser = await approveUser({
           userId,
           approvedById: session.user.id,
@@ -62,10 +64,11 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: "User approved successfully",
-          user: approvedUser[0]
+          user: approvedUser[0],
         });
+      }
 
-      case "reject":
+      case "reject": {
         const rejectedUsers = await rejectUser({ userId });
 
         // Send rejection email notification
@@ -77,19 +80,24 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ message: "User rejected successfully" });
+      }
 
-      case "setRole":
+      case "setRole": {
         const updatedUser = await setUserRole({ userId, role });
         return NextResponse.json({
           message: "User role updated successfully",
-          user: updatedUser[0]
+          user: updatedUser[0],
         });
+      }
 
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
   } catch (error) {
     console.error("Error managing user:", error);
-    return NextResponse.json({ error: "Failed to manage user" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to manage user" },
+      { status: 500 }
+    );
   }
 }
