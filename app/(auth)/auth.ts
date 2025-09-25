@@ -13,6 +13,8 @@ declare module "next-auth" {
     user: {
       id: string;
       type: UserType;
+      isApproved?: boolean;
+      role?: string;
     } & DefaultSession["user"];
   }
 
@@ -21,6 +23,8 @@ declare module "next-auth" {
     id?: string;
     email?: string | null;
     type: UserType;
+    isApproved?: boolean;
+    role?: string;
   }
 }
 
@@ -28,6 +32,8 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     type: UserType;
+    isApproved?: boolean;
+    role?: string;
   }
 }
 
@@ -75,10 +81,25 @@ export const {
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
+      }
+
+      // For regular users, check approval status on each token refresh
+      if (token.type === "regular" && token.email) {
+        try {
+          const users = await getUser(token.email);
+          if (users.length > 0) {
+            const dbUser = users[0];
+            token.isApproved = dbUser.isApproved || false;
+            token.role = dbUser.role || "user";
+          }
+        } catch (error) {
+          console.error("Error checking user approval status:", error);
+          token.isApproved = false;
+        }
       }
 
       return token;
@@ -87,6 +108,8 @@ export const {
       if (session.user) {
         session.user.id = token.id;
         session.user.type = token.type;
+        session.user.isApproved = token.isApproved;
+        session.user.role = token.role;
       }
 
       return session;

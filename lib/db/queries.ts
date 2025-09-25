@@ -560,3 +560,98 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     );
   }
 }
+
+// User approval management functions
+export async function getPendingUsers(): Promise<User[]> {
+  try {
+    return await db
+      .select()
+      .from(user)
+      .where(and(eq(user.isApproved, false), eq(user.role, "user")))
+      .orderBy(desc(user.id));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get pending users"
+    );
+  }
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  try {
+    return await db
+      .select()
+      .from(user)
+      .where(eq(user.role, "user"))
+      .orderBy(desc(user.id));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get all users"
+    );
+  }
+}
+
+export async function approveUser({
+  userId,
+  approvedById,
+}: {
+  userId: string;
+  approvedById: string;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({
+        isApproved: true,
+        approvedAt: new Date(),
+        approvedBy: approvedById,
+      })
+      .where(eq(user.id, userId))
+      .returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to approve user"
+    );
+  }
+}
+
+export async function rejectUser({
+  userId,
+}: {
+  userId: string;
+}) {
+  try {
+    return await db
+      .delete(user)
+      .where(eq(user.id, userId))
+      .returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to reject user"
+    );
+  }
+}
+
+export async function setUserRole({
+  userId,
+  role,
+}: {
+  userId: string;
+  role: string;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({ role })
+      .where(eq(user.id, userId))
+      .returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to set user role"
+    );
+  }
+}

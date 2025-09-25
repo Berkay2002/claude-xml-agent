@@ -38,6 +38,7 @@ import {
   updateChatLastContextById,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
+import { applyRateLimit } from "@/lib/middleware/rate-limit";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
@@ -84,7 +85,7 @@ export function getStreamContext() {
   return globalStreamContext;
 }
 
-export async function POST(request: Request) {
+async function _POST(request: Request) {
   let requestBody: PostRequestBody;
 
   try {
@@ -330,4 +331,16 @@ export async function DELETE(request: Request) {
   const deletedChat = await deleteChatById({ id });
 
   return Response.json(deletedChat, { status: 200 });
+}
+
+// Apply rate limiting to POST requests
+export async function POST(request: Request) {
+  // Check rate limit first
+  const rateLimitResponse = await applyRateLimit(request as any);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  // If rate limit passes, execute the original handler
+  return _POST(request);
 }

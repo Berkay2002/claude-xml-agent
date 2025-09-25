@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
+import { applyRateLimit } from "@/lib/middleware/rate-limit";
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -17,7 +18,7 @@ const FileSchema = z.object({
     }),
 });
 
-export async function POST(request: Request) {
+async function _POST(request: Request) {
   const session = await auth();
 
   if (!session) {
@@ -65,4 +66,16 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Apply rate limiting to POST requests
+export async function POST(request: Request) {
+  // Check rate limit first
+  const rateLimitResponse = await applyRateLimit(request as any);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  // If rate limit passes, execute the original handler
+  return _POST(request);
 }

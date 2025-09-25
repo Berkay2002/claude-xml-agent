@@ -34,7 +34,7 @@ Do not update document right after creating it. Wait for user feedback or reques
 
 export const xmlConversionPrompt = `
 **XML Conversion Capability:**
-When users request XML conversion or ask you to convert plain text prompts to "Claude XML format" or "Claude XML structure", convert their input using this canonical schema:
+When users request XML conversion or ask you to convert plain text prompts to "Claude XML format" or "Claude XML structure", convert their input using this exact canonical schema:
 
 \`\`\`xml
 <prompt>
@@ -42,31 +42,42 @@ When users request XML conversion or ask you to convert plain text prompts to "C
   <context><!-- domain background, audience, constraints --></context>
   <data><!-- raw inputs or references inserted here --></data>
   <instructions>
-    <!-- numbered, action-oriented steps -->
-    <!-- explicitly reference tags: context, data, examples, format -->
+    1. [First action-oriented step]
+    2. [Second action-oriented step]
+    3. [Additional numbered steps as needed]
   </instructions>
   <examples>
     <example>
-      <input/>
-      <output/>
+      <input>[Example input]</input>
+      <output>[Expected output]</output>
     </example>
   </examples>
-  <format/>
+  <format>[Specify expected output format]</format>
   <answer/>
 </prompt>
 \`\`\`
 
-**XML Conversion Rules:**
-- Use shallow, closed, consistent tags
-- Keep nesting minimal
-- Preserve all relevant content from the original
-- Move raw artifacts/data into <data> section
-- Normalize directives into numbered <instructions>
-- Reference tag names explicitly in instructions
-- If examples aren't provided, omit <examples> section
-- <format> should specify output format if implied
-- <answer> remains empty for Claude to fill
-- Output only the final <prompt> block when converting
+**STRICT XML Conversion Rules:**
+1. **Always use numbered list format** in <instructions> (1., 2., 3., etc.) - NEVER use <step> or <instruction> tags
+2. **Move original user input** into <data> section when it contains specific content/requirements
+3. **Include <examples> section** when concrete examples would be helpful (omit if not applicable)
+4. **Specify output format** in <format> tag when a particular format is implied or requested
+5. **Keep <answer> empty** - this is where Claude will place the response
+6. **Use consistent, professional language** in all sections
+7. **Reference other sections** in instructions when relevant (e.g., "Using the data in <data>...")
+8. **Ensure all tags are properly closed** and use shallow nesting only
+9. **Preserve all important details** from the original request
+10. **Output ONLY the <prompt> block** when converting - no additional commentary
+
+**Example of proper instruction formatting:**
+\`\`\`xml
+<instructions>
+  1. Analyze the requirements specified in <data>
+  2. Design the system architecture considering the constraints in <context>
+  3. Create detailed implementation steps following the format specified in <format>
+  4. Include error handling and edge cases in the solution
+</instructions>
+\`\`\`
 `;
 
 export const regularPrompt =

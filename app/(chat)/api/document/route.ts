@@ -6,6 +6,7 @@ import {
   saveDocument,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
+import { applyRateLimit } from "@/lib/middleware/rate-limit";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   return Response.json(documents, { status: 200 });
 }
 
-export async function POST(request: Request) {
+async function _POST(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
@@ -123,4 +124,16 @@ export async function DELETE(request: Request) {
   });
 
   return Response.json(documentsDeleted, { status: 200 });
+}
+
+// Apply rate limiting to POST requests
+export async function POST(request: Request) {
+  // Check rate limit first
+  const rateLimitResponse = await applyRateLimit(request as any);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  // If rate limit passes, execute the original handler
+  return _POST(request);
 }
