@@ -1,32 +1,70 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+// Simple in-memory rate limiting (for development/fallback)
+// Note: This won't work across multiple server instances in production
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+}
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.REDIS_URL!,
-});
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Clean up expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
+function createSimpleRateLimit(maxRequests: number, windowMs: number) {
+  return {
+    limit: async (identifier: string) => {
+      const key = `${identifier}`;
+      const now = Date.now();
+      const entry = rateLimitStore.get(key);
+
+      if (!entry || now > entry.resetTime) {
+        // First request or window expired
+        const newEntry = {
+          count: 1,
+          resetTime: now + windowMs,
+        };
+        rateLimitStore.set(key, newEntry);
+        return {
+          success: true,
+          limit: maxRequests,
+          remaining: maxRequests - 1,
+          reset: newEntry.resetTime,
+        };
+      }
+
+      if (entry.count >= maxRequests) {
+        // Rate limit exceeded
+        return {
+          success: false,
+          limit: maxRequests,
+          remaining: 0,
+          reset: entry.resetTime,
+        };
+      }
+
+      // Increment counter
+      entry.count++;
+      return {
+        success: true,
+        limit: maxRequests,
+        remaining: maxRequests - entry.count,
+        reset: entry.resetTime,
+      };
+    },
+  };
+}
 
 // Rate limiting configurations
-export const guestRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "1 h"), // 10 requests per hour
-  analytics: true,
-  prefix: "ratelimit:guest",
-});
-
-export const unapprovedUserRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(5, "1 h"), // 5 requests per hour
-  analytics: true,
-  prefix: "ratelimit:unapproved",
-});
-
-export const approvedUserRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(1000, "1 h"), // Effectively unlimited (1000 per hour)
-  analytics: true,
-  prefix: "ratelimit:approved",
-});
+export const guestRateLimit = createSimpleRateLimit(10, 60 * 60 * 1000); // 10 requests per hour
+export const unapprovedUserRateLimit = createSimpleRateLimit(5, 60 * 60 * 1000); // 5 requests per hour
+export const approvedUserRateLimit = createSimpleRateLimit(1000, 60 * 60 * 1000); // 1000 requests per hour
 
 export type UserType = "guest" | "unapproved" | "approved";
 
@@ -35,7 +73,7 @@ export function getRateLimitForUser(userType: UserType, isApproved?: boolean) {
     return guestRateLimit;
   }
 
-  if (userType === "regular" && isApproved) {
+  if (userType === "approved" || (userType === "unapproved" && isApproved)) {
     return approvedUserRateLimit;
   }
 

@@ -27,7 +27,10 @@ export async function applyRateLimit(
     } else {
       // Guest user - use IP address as identifier
       identifier =
-        request.ip || request.headers.get("x-forwarded-for") || "unknown";
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip") ||
+        request.headers.get("cf-connecting-ip") ||
+        "unknown";
       userType = "guest";
     }
 
