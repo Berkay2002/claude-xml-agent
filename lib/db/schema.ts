@@ -19,7 +19,7 @@ export const user = pgTable("User", {
   password: varchar("password", { length: 64 }),
   isApproved: boolean("isApproved").notNull().default(false),
   approvedAt: timestamp("approvedAt"),
-  approvedBy: uuid("approvedBy").references(() => user.id),
+  approvedBy: uuid("approvedBy").references((): any => user.id),
   role: varchar("role", { length: 20 }).notNull().default("user"),
 });
 
