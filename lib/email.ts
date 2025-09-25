@@ -15,7 +15,7 @@ export async function sendApprovalRequestEmail({
       ? [adminEmail]
       : (process.env.EMAIL_ADMIN || "admin@berkay.se")
           .split(",")
-          .map(email => email.trim());
+          .map((email) => email.trim());
 
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || "noreply@berkay.se",
