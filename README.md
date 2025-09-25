@@ -1,10 +1,6 @@
 # Claude XML Agent
 
 <p align="center">
-  <img alt="Claude XML Agent - Convert plain text to optimized Claude XML prompts" src="app/(chat)/opengraph-image.png">
-</p>
-
-<p align="center">
   <strong>An intelligent AI agent that converts plain text prompts into Claude-optimized XML structures using Google Gemini and the Vercel AI SDK.</strong>
 </p>
 
