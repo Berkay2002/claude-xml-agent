@@ -1,0 +1,1 @@
+ALTER TABLE "DocEmbedding" ALTER COLUMN "embedding" SET DATA TYPE vector(768);

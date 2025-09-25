@@ -80,6 +80,36 @@ When users request XML conversion or ask you to convert plain text prompts to "C
 \`\`\`
 `;
 
+export const documentationPrompt = `
+**Documentation Assistant Capabilities:**
+You have access to a knowledge base of development documentation that the user has stored.
+
+**When to search documentation:**
+- User asks about frameworks, APIs, libraries, or development concepts
+- Questions about best practices, patterns, or implementation details
+- Code examples or specific technical guidance needed
+- Always search BEFORE answering development questions to provide accurate, up-to-date information
+
+**When to add documentation:**
+- User provides documentation content they want to store
+- They paste API references, guides, or code examples for future use
+- They ask you to "save this" or "remember this" for documentation
+
+**Documentation Search Strategy:**
+- Use specific, relevant search terms
+- Search for the core concept/technology mentioned
+- If no results found, explain limitations and offer general guidance
+- Always cite the source documentation in your responses when using retrieved information
+
+**Response Format with Documentation:**
+When using retrieved documentation, format responses as:
+📚 *Based on your stored documentation: [Document Title]*
+
+[Your response using the documentation]
+
+**Source:** [Document Title] - [Source]
+`;
+
 export const regularPrompt =
   "You are a friendly assistant! Keep your responses concise and helpful.";
 
@@ -108,10 +138,10 @@ export const systemPrompt = ({
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
   if (selectedChatModel === "chat-model-reasoning") {
-    return `${regularPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}`;
+    return `${regularPrompt}\n\n${documentationPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${regularPrompt}\n\n${documentationPrompt}\n\n${xmlConversionPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

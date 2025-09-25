@@ -22,9 +22,11 @@ import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import type { ChatModel } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
+import { addDocumentationTool } from "@/lib/ai/tools/add-documentation";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
+import { searchDocumentationTool } from "@/lib/ai/tools/search-documentation";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -189,6 +191,8 @@ async function _POST(request: Request) {
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
+                  "searchDocumentation",
+                  "addDocumentation",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -199,6 +203,8 @@ async function _POST(request: Request) {
               session,
               dataStream,
             }),
+            searchDocumentation: searchDocumentationTool({ session }),
+            addDocumentation: addDocumentationTool({ session }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

@@ -2,6 +2,8 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  index,
+  integer,
   json,
   jsonb,
   pgTable,
@@ -10,6 +12,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 import type { AppUsage } from "../usage";
 
@@ -175,3 +178,55 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// RAG Documentation Tables
+export const documentation = pgTable("Documentation", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  url: text("url"),
+  source: text("source").notNull(), // e.g., "Next.js Docs", "React Guide"
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type Documentation = InferSelectModel<typeof documentation>;
+
+export const docChunk = pgTable("DocChunk", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  documentationId: uuid("documentationId")
+    .notNull()
+    .references(() => documentation.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  tokenCount: integer("tokenCount").notNull(),
+  chunkIndex: integer("chunkIndex").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type DocChunk = InferSelectModel<typeof docChunk>;
+
+export const docEmbedding = pgTable(
+  "DocEmbedding",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    chunkId: uuid("chunkId")
+      .notNull()
+      .references(() => docChunk.id, { onDelete: "cascade" }),
+    embedding: vector("embedding", { dimensions: 768 }).notNull(), // gemini-embedding-001 reduced dimensions
+    model: text("model").notNull().default("gemini-embedding-001"),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    embeddingIndex: index("embeddingIndex").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
+
+export type DocEmbedding = InferSelectModel<typeof docEmbedding>;

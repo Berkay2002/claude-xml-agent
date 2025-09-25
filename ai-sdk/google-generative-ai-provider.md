@@ -781,7 +781,7 @@ The following optional provider options are available for Google Generative AI e
 
 | Model                  | Default Dimensions | Custom Dimensions   |
 | ---------------------- | ------------------ | ------------------- |
-| `gemini-embedding-001` | 3072               | <Check size={18} /> |
+| `gemini-embedding-001` | 3072 or 1536 or 768| <Check size={18} /> |
 | `text-embedding-004`   | 768                | <Check size={18} /> |
 
 ## Image Models
