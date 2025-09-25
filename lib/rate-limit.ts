@@ -65,12 +65,12 @@ function createSimpleRateLimit(maxRequests: number, windowMs: number) {
 }
 
 // Rate limiting configurations
-export const guestRateLimit = createSimpleRateLimit(10, 60 * 60 * 1000); // 10 requests per hour
+export const guestRateLimit = createSimpleRateLimit(3, 60 * 60 * 1000); // 3 requests per hour
 export const unapprovedUserRateLimit = createSimpleRateLimit(5, 60 * 60 * 1000); // 5 requests per hour
 export const approvedUserRateLimit = createSimpleRateLimit(
   1000,
   60 * 60 * 1000
-); // 1000 requests per hour
+); // 1000 requests per hour (approved users and admins)
 
 export type UserType = "guest" | "unapproved" | "approved";
 
@@ -79,7 +79,8 @@ export function getRateLimitForUser(userType: UserType, isApproved?: boolean) {
     return guestRateLimit;
   }
 
-  if (userType === "approved" || (userType === "unapproved" && isApproved)) {
+  // Authenticated users - rate limit based on approval status only
+  if (isApproved) {
     return approvedUserRateLimit;
   }
 

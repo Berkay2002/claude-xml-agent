@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { createUser, getUser } from "@/lib/db/queries";
+import { sendApprovalRequestEmail } from "@/lib/email";
 
 import { signIn } from "./auth";
 
@@ -67,6 +68,15 @@ export const register = async (
       return { status: "user_exists" } as RegisterActionState;
     }
     await createUser(validatedData.email, validatedData.password);
+
+    // Send approval request email to admins
+    try {
+      await sendApprovalRequestEmail({ userEmail: validatedData.email });
+    } catch (error) {
+      console.error("Failed to send approval request email:", error);
+      // Continue with registration even if email fails
+    }
+
     await signIn("credentials", {
       email: validatedData.email,
       password: validatedData.password,
